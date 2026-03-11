@@ -296,7 +296,12 @@ class PointsCanvasPainter extends CustomPainter {
 
     Offset? previousCenter;
     final firstCenterOffset = (startOffset + radius).clamp(0.0, length);
-    for (var offset = firstCenterOffset; offset <= length; offset += spacing) {
+    final maxUnclippedOffset = (length - radius).clamp(0.0, length);
+    for (
+      var offset = firstCenterOffset;
+      offset <= maxUnclippedOffset + 1e-6;
+      offset += spacing
+    ) {
       final tangent = pathMetric.getTangentForOffset(offset);
       if (tangent == null) {
         continue;
@@ -331,8 +336,34 @@ class PointsCanvasPainter extends CustomPainter {
           fallbackCenter = minNonOverlapCenter;
         }
 
+        // Clip the last circle so it never goes beyond the endpoint (green dot)
+        // along the forward direction from second-last center to endpoint.
+        const clipExtent = 10000.0;
+        final normal = Offset(-direction.dy, direction.dx);
+        final clipPath = Path()
+          ..moveTo(
+            endPoint.dx - direction.dx * clipExtent + normal.dx * clipExtent,
+            endPoint.dy - direction.dy * clipExtent + normal.dy * clipExtent,
+          )
+          ..lineTo(
+            endPoint.dx - direction.dx * clipExtent - normal.dx * clipExtent,
+            endPoint.dy - direction.dy * clipExtent - normal.dy * clipExtent,
+          )
+          ..lineTo(
+            endPoint.dx - normal.dx * clipExtent,
+            endPoint.dy - normal.dy * clipExtent,
+          )
+          ..lineTo(
+            endPoint.dx + normal.dx * clipExtent,
+            endPoint.dy + normal.dy * clipExtent,
+          )
+          ..close();
+
+        canvas.save();
+        canvas.clipPath(clipPath);
         canvas.drawCircle(fallbackCenter, radius, fillPaint);
         canvas.drawCircle(fallbackCenter, radius, strokePaint);
+        canvas.restore();
       }
     }
   }

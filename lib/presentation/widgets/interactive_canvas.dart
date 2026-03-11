@@ -52,12 +52,6 @@ class _InteractiveCanvasState extends State<InteractiveCanvas>
               onTapDown: (_) {
                 FocusManager.instance.primaryFocus?.unfocus();
               },
-              onLongPressStart: (details) {
-                context.read<CanvasCubit>().selectMovingStartPoint(
-                  localPosition: details.localPosition,
-                  canvasSize: canvasSize,
-                );
-              },
               onPanStart: (details) {
                 FocusManager.instance.primaryFocus?.unfocus();
                 context.read<CanvasCubit>().startDrag(

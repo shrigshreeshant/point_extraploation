@@ -67,21 +67,6 @@ class CanvasCubit extends Cubit<CanvasState> {
     emit(state.copyWith(movingEndIndex: selectedIndex));
   }
 
-  void selectMovingStartPoint({
-    required Offset localPosition,
-    required Size canvasSize,
-  }) {
-    final selectedIndex = CanvasMath.findPointIndexAtPosition(
-      normalizedPoints: state.normalizedPoints,
-      localPosition: localPosition,
-      canvasSize: canvasSize,
-    );
-    if (selectedIndex == null || selectedIndex == state.movingEndIndex) {
-      return;
-    }
-    emit(state.copyWith(movingStartIndex: selectedIndex));
-  }
-
   void startDrag({required Offset localPosition, required Size canvasSize}) {
     final selectedIndex = CanvasMath.findPointIndexAtPosition(
       normalizedPoints: state.normalizedPoints,

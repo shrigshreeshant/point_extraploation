@@ -29,7 +29,7 @@ The app lets you manipulate a set of points and visualize derived geometry:
    - Draw this bridge path in purple.
 
 4. **Circle plotting**
-   - Long-press any point to pick the circle start point.
+   - Circle plotting starts from the configured start index in state.
    - Snap start to nearest position on the drawn curve path.
    - Draw circles one-after-another with non-overlap spacing.
    - First circle starts from circumference (not start-center).
@@ -55,7 +55,6 @@ The app lets you manipulate a set of points and visualize derived geometry:
 - **Play/Pause**: toggles circle plotting animation
 - **Fit last N**: text input + Update
 - **Circle radius**: slider
-- **Long press on canvas point**: choose circle start point
 - **Drag point**: move point position
 
 ---

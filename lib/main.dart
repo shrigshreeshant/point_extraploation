@@ -79,7 +79,7 @@ class _CanvasPageState extends State<CanvasPage> {
             children: [
               const SizedBox(height: 8),
               const Text(
-                'Drag points. Long-press any point to set circle start. Circles are drawn sequentially on the curve.',
+                'Drag points. Circles are drawn sequentially on the curve.',
               ),
               const SizedBox(height: 12),
               Wrap(

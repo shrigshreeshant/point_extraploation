@@ -54,6 +54,15 @@ class _CanvasPageState extends State<CanvasPage> {
   void _applyFitCount() {
     final parsed = int.tryParse(_fitCountController.text.trim());
     if (parsed == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid number for Fit last N.')),
+      );
+      return;
+    }
+    if (parsed < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fit last N should be at least 3.')),
+      );
       return;
     }
     context.read<CanvasCubit>().setFitTailCount(parsed);
@@ -105,10 +114,34 @@ class _CanvasPageState extends State<CanvasPage> {
                   ),
                   IconButton.filledTonal(
                     onPressed: () {
-                      context.read<CanvasCubit>().removePoint();
+                      final removed = context.read<CanvasCubit>().removePoint();
+                      if (!removed) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('At least 5 points are required.'),
+                          ),
+                        );
+                      }
                     },
                     icon: const Icon(Icons.remove),
                     tooltip: 'Remove point',
+                  ),
+                  BlocBuilder<CanvasCubit, CanvasState>(
+                    builder: (context, state) {
+                      return IconButton.filled(
+                        onPressed: () {
+                          context.read<CanvasCubit>().togglePlotAnimation();
+                        },
+                        icon: Icon(
+                          state.isPlotAnimationPlaying
+                              ? Icons.pause
+                              : Icons.play_arrow,
+                        ),
+                        tooltip: state.isPlotAnimationPlaying
+                            ? 'Pause plotting animation'
+                            : 'Play plotting animation',
+                      );
+                    },
                   ),
                   const SizedBox(width: 12),
                   BlocBuilder<CanvasCubit, CanvasState>(

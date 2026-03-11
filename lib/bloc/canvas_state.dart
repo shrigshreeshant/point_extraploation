@@ -8,6 +8,7 @@ class CanvasState {
     required this.movingCircleRadius,
     required this.movingStartIndex,
     required this.movingEndIndex,
+    required this.isPlotAnimationPlaying,
     this.farthestProjectedIndex,
     this.fittedLineStart,
     this.fittedLineEnd,
@@ -20,6 +21,7 @@ class CanvasState {
   final double movingCircleRadius;
   final int movingStartIndex;
   final int movingEndIndex;
+  final bool isPlotAnimationPlaying;
   final int? farthestProjectedIndex;
   final Offset? fittedLineStart;
   final Offset? fittedLineEnd;
@@ -39,6 +41,7 @@ class CanvasState {
       movingCircleRadius: 14,
       movingStartIndex: 0,
       movingEndIndex: 1,
+      isPlotAnimationPlaying: false,
     );
   }
 
@@ -49,6 +52,7 @@ class CanvasState {
     double? movingCircleRadius,
     int? movingStartIndex,
     int? movingEndIndex,
+    bool? isPlotAnimationPlaying,
     int? farthestProjectedIndex,
     Offset? fittedLineStart,
     Offset? fittedLineEnd,
@@ -64,6 +68,8 @@ class CanvasState {
       movingCircleRadius: movingCircleRadius ?? this.movingCircleRadius,
       movingStartIndex: movingStartIndex ?? this.movingStartIndex,
       movingEndIndex: movingEndIndex ?? this.movingEndIndex,
+      isPlotAnimationPlaying:
+          isPlotAnimationPlaying ?? this.isPlotAnimationPlaying,
       farthestProjectedIndex: clearFarthestProjected
           ? null
           : farthestProjectedIndex ?? this.farthestProjectedIndex,

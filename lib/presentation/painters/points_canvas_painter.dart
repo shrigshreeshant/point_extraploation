@@ -11,6 +11,7 @@ class PointsCanvasPainter extends CustomPainter {
     required this.fitTailCount,
     required this.movingCircleRadius,
     required this.movingStartIndex,
+    required this.plotProgress,
   });
 
   final List<Offset> normalizedPoints;
@@ -18,6 +19,7 @@ class PointsCanvasPainter extends CustomPainter {
   final int fitTailCount;
   final double movingCircleRadius;
   final int movingStartIndex;
+  final double plotProgress;
 
   ({
     List<Offset> projectedTailPoints,
@@ -40,7 +42,7 @@ class PointsCanvasPainter extends CustomPainter {
     }
 
     final p2 = canvasPoints[1];
-    final windowCount = fitTailCount.clamp(2, canvasPoints.length);
+    final windowCount = fitTailCount.clamp(3, canvasPoints.length);
     final prefix = canvasPoints
         .take(canvasPoints.length - windowCount)
         .toList();
@@ -294,7 +296,7 @@ class PointsCanvasPainter extends CustomPainter {
     }
     final endPoint = endTangent.position;
 
-    Offset? previousCenter;
+    final centersOnCurve = <Offset>[];
     final firstCenterOffset = (startOffset + radius).clamp(0.0, length);
     final maxUnclippedOffset = (length - radius).clamp(0.0, length);
     for (
@@ -306,24 +308,20 @@ class PointsCanvasPainter extends CustomPainter {
       if (tangent == null) {
         continue;
       }
-      canvas.drawCircle(tangent.position, radius, fillPaint);
-      canvas.drawCircle(tangent.position, radius, strokePaint);
-      previousCenter = tangent.position;
+      centersOnCurve.add(tangent.position);
     }
 
-    // If the last center on curve cannot naturally satisfy end coverage,
-    // add one more circle whose center is on the line to the end point.
-    if (previousCenter != null) {
+    Offset? fallbackCenter;
+    if (centersOnCurve.isNotEmpty) {
+      final previousCenter = centersOnCurve.last;
       final toEnd = endPoint - previousCenter;
       final distanceToEnd = toEnd.distance;
       if (distanceToEnd > radius + 0.5) {
-        canvas.drawCircle(previousCenter, radius + 2, secondLastHighlightPaint);
-
         final direction = Offset(
           toEnd.dx / distanceToEnd,
           toEnd.dy / distanceToEnd,
         );
-        var fallbackCenter = Offset(
+        var candidateFallback = Offset(
           endPoint.dx - direction.dx * radius,
           endPoint.dy - direction.dy * radius,
         );
@@ -331,11 +329,42 @@ class PointsCanvasPainter extends CustomPainter {
           previousCenter.dx + direction.dx * spacing,
           previousCenter.dy + direction.dy * spacing,
         );
-        final centerGap = (fallbackCenter - previousCenter).distance;
+        final centerGap = (candidateFallback - previousCenter).distance;
         if (centerGap < spacing) {
-          fallbackCenter = minNonOverlapCenter;
+          candidateFallback = minNonOverlapCenter;
         }
+        fallbackCenter = candidateFallback;
+      }
+    }
 
+    final totalCount = centersOnCurve.length + (fallbackCenter != null ? 1 : 0);
+    if (totalCount == 0) {
+      return;
+    }
+    final clampedProgress = plotProgress.clamp(0.0, 1.0);
+    final visibleCount = math.max(1, (clampedProgress * totalCount).ceil());
+    final visibleOnCurve = math.min(visibleCount, centersOnCurve.length);
+    for (var i = 0; i < visibleOnCurve; i++) {
+      final center = centersOnCurve[i];
+      canvas.drawCircle(center, radius, fillPaint);
+      canvas.drawCircle(center, radius, strokePaint);
+    }
+
+    if (fallbackCenter != null && visibleCount > centersOnCurve.length) {
+      final secondLastCenter = centersOnCurve.last;
+      final toEnd = endPoint - secondLastCenter;
+      final distanceToEnd = toEnd.distance;
+      if (distanceToEnd > 1e-6) {
+        canvas.drawCircle(
+          secondLastCenter,
+          radius + 2,
+          secondLastHighlightPaint,
+        );
+
+        final direction = Offset(
+          toEnd.dx / distanceToEnd,
+          toEnd.dy / distanceToEnd,
+        );
         // Clip the last circle so it never goes beyond the endpoint (green dot)
         // along the forward direction from second-last center to endpoint.
         const clipExtent = 10000.0;
@@ -541,6 +570,7 @@ class PointsCanvasPainter extends CustomPainter {
         oldDelegate.activePointIndex != activePointIndex ||
         oldDelegate.fitTailCount != fitTailCount ||
         oldDelegate.movingCircleRadius != movingCircleRadius ||
-        oldDelegate.movingStartIndex != movingStartIndex;
+        oldDelegate.movingStartIndex != movingStartIndex ||
+        oldDelegate.plotProgress != plotProgress;
   }
 }

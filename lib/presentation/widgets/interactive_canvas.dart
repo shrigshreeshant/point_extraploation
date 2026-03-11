@@ -5,8 +5,31 @@ import '../../bloc/canvas_cubit.dart';
 import '../../bloc/canvas_state.dart';
 import '../painters/points_canvas_painter.dart';
 
-class InteractiveCanvas extends StatelessWidget {
+class InteractiveCanvas extends StatefulWidget {
   const InteractiveCanvas({super.key});
+
+  @override
+  State<InteractiveCanvas> createState() => _InteractiveCanvasState();
+}
+
+class _InteractiveCanvasState extends State<InteractiveCanvas>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _plotController;
+
+  @override
+  void initState() {
+    super.initState();
+    _plotController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _plotController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +39,14 @@ class InteractiveCanvas extends StatelessWidget {
 
         return BlocBuilder<CanvasCubit, CanvasState>(
           builder: (context, state) {
+            if (state.isPlotAnimationPlaying) {
+              if (!_plotController.isAnimating) {
+                _plotController.repeat();
+              }
+            } else {
+              _plotController.stop();
+            }
+
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapDown: (_) {
@@ -46,15 +77,21 @@ class InteractiveCanvas extends StatelessWidget {
               onPanCancel: () {
                 context.read<CanvasCubit>().endDrag();
               },
-              child: CustomPaint(
-                painter: PointsCanvasPainter(
-                  normalizedPoints: state.normalizedPoints,
-                  activePointIndex: state.activePointIndex,
-                  fitTailCount: state.fitTailCount,
-                  movingCircleRadius: state.movingCircleRadius,
-                  movingStartIndex: state.movingStartIndex,
-                ),
-                child: const SizedBox.expand(),
+              child: AnimatedBuilder(
+                animation: _plotController,
+                builder: (context, _) {
+                  return CustomPaint(
+                    painter: PointsCanvasPainter(
+                      normalizedPoints: state.normalizedPoints,
+                      activePointIndex: state.activePointIndex,
+                      fitTailCount: state.fitTailCount,
+                      movingCircleRadius: state.movingCircleRadius,
+                      movingStartIndex: state.movingStartIndex,
+                      plotProgress: _plotController.value,
+                    ),
+                    child: const SizedBox.expand(),
+                  );
+                },
               ),
             );
           },

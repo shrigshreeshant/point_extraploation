@@ -14,9 +14,9 @@ class CanvasCubit extends Cubit<CanvasState> {
     emit(state.copyWith(normalizedPoints: updated));
   }
 
-  void removePoint() {
-    if (state.normalizedPoints.length <= 2) {
-      return;
+  bool removePoint() {
+    if (state.normalizedPoints.length <= 5) {
+      return false;
     }
     final updated = [...state.normalizedPoints]..removeLast();
     final maxIndex = updated.length - 1;
@@ -32,15 +32,24 @@ class CanvasCubit extends Cubit<CanvasState> {
         movingEndIndex: nextEnd,
       ),
     );
+    return true;
   }
 
   void setFitTailCount(int value) {
-    final sanitized = value < 2 ? 2 : value;
+    final sanitized = value < 3 ? 3 : value;
     emit(state.copyWith(fitTailCount: sanitized));
   }
 
   void setMovingCircleRadius(double value) {
     emit(state.copyWith(movingCircleRadius: value.clamp(4, 48)));
+  }
+
+  void togglePlotAnimation() {
+    emit(
+      state.copyWith(
+        isPlotAnimationPlaying: !state.isPlotAnimationPlaying,
+      ),
+    );
   }
 
   void selectMovingEndPoint({

@@ -9,11 +9,15 @@ class PointsCanvasPainter extends CustomPainter {
     required this.normalizedPoints,
     required this.activePointIndex,
     required this.fitTailCount,
+    required this.movingCircleRadius,
+    required this.movingStartIndex,
   });
 
   final List<Offset> normalizedPoints;
   final int? activePointIndex;
   final int fitTailCount;
+  final double movingCircleRadius;
+  final int movingStartIndex;
 
   ({
     List<Offset> projectedTailPoints,
@@ -255,6 +259,123 @@ class PointsCanvasPainter extends CustomPainter {
     }
   }
 
+  void _drawCircleChainOnPath({
+    required Canvas canvas,
+    required Path path,
+    required double radius,
+    required double startOffset,
+  }) {
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) {
+      return;
+    }
+    final pathMetric = metrics.first;
+    final length = pathMetric.length;
+    if (length < 1e-6) {
+      return;
+    }
+    final spacing = math.max(2.0, radius * 2 + 2);
+
+    final fillPaint = Paint()
+      ..color = const Color(0x5581D4FA)
+      ..style = PaintingStyle.fill;
+    final strokePaint = Paint()
+      ..color = const Color(0xFF0288D1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.25;
+    final secondLastHighlightPaint = Paint()
+      ..color = const Color(0xFFFFA000)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+
+    final endTangent = pathMetric.getTangentForOffset(length);
+    if (endTangent == null) {
+      return;
+    }
+    final endPoint = endTangent.position;
+
+    Offset? previousCenter;
+    final firstCenterOffset = (startOffset + radius).clamp(0.0, length);
+    for (var offset = firstCenterOffset; offset <= length; offset += spacing) {
+      final tangent = pathMetric.getTangentForOffset(offset);
+      if (tangent == null) {
+        continue;
+      }
+      canvas.drawCircle(tangent.position, radius, fillPaint);
+      canvas.drawCircle(tangent.position, radius, strokePaint);
+      previousCenter = tangent.position;
+    }
+
+    // If the last center on curve cannot naturally satisfy end coverage,
+    // add one more circle whose center is on the line to the end point.
+    if (previousCenter != null) {
+      final toEnd = endPoint - previousCenter;
+      final distanceToEnd = toEnd.distance;
+      if (distanceToEnd > radius + 0.5) {
+        canvas.drawCircle(previousCenter, radius + 2, secondLastHighlightPaint);
+
+        final direction = Offset(
+          toEnd.dx / distanceToEnd,
+          toEnd.dy / distanceToEnd,
+        );
+        var fallbackCenter = Offset(
+          endPoint.dx - direction.dx * radius,
+          endPoint.dy - direction.dy * radius,
+        );
+        final minNonOverlapCenter = Offset(
+          previousCenter.dx + direction.dx * spacing,
+          previousCenter.dy + direction.dy * spacing,
+        );
+        final centerGap = (fallbackCenter - previousCenter).distance;
+        if (centerGap < spacing) {
+          fallbackCenter = minNonOverlapCenter;
+        }
+
+        canvas.drawCircle(fallbackCenter, radius, fillPaint);
+        canvas.drawCircle(fallbackCenter, radius, strokePaint);
+      }
+    }
+  }
+
+  ({double offset, Offset position})? _nearestPointOnPath({
+    required Path path,
+    required Offset target,
+    int samples = 240,
+  }) {
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) {
+      return null;
+    }
+
+    final metric = metrics.first;
+    final length = metric.length;
+    if (length < 1e-6) {
+      return null;
+    }
+
+    var nearestOffset = 0.0;
+    var nearestPosition =
+        metric.getTangentForOffset(0)?.position ?? Offset.zero;
+    var minDistanceSq = double.infinity;
+
+    for (var i = 0; i <= samples; i++) {
+      final sampleOffset = length * (i / samples);
+      final tangent = metric.getTangentForOffset(sampleOffset);
+      if (tangent == null) {
+        continue;
+      }
+      final delta = tangent.position - target;
+      final distanceSq = delta.dx * delta.dx + delta.dy * delta.dy;
+      if (distanceSq < minDistanceSq) {
+        minDistanceSq = distanceSq;
+        nearestOffset = sampleOffset;
+        nearestPosition = tangent.position;
+      }
+    }
+
+    return (offset: nearestOffset, position: nearestPosition);
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final borderPaint = Paint()
@@ -298,6 +419,11 @@ class PointsCanvasPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
 
+    final streamEndpointPaint = Paint()
+      ..color = const Color(0xFF00695C)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+
     canvas.drawRect(Offset.zero & size, borderPaint);
 
     if (normalizedPoints.length > 1) {
@@ -313,8 +439,9 @@ class PointsCanvasPainter extends CustomPainter {
           paint: fitLinePaint,
         );
       }
+      Path? selectedPath;
       if (fit.nonClusterPathPoints.length >= 2) {
-        final selectedPath = _buildSmoothPath(fit.nonClusterPathPoints);
+        selectedPath = _buildSmoothPath(fit.nonClusterPathPoints);
         canvas.drawPath(selectedPath, bridgeCurvePaint);
       }
       for (var i = 0; i < fit.projectedTailPoints.length; i++) {
@@ -326,6 +453,33 @@ class PointsCanvasPainter extends CustomPainter {
           7,
           isFarthest ? selectedProjectedBorderPaint : projectedBorderPaint,
         );
+      }
+      if (fit.selectedProjectedPoint != null && selectedPath != null) {
+        final safeStart = movingStartIndex.clamp(
+          0,
+          normalizedPoints.length - 1,
+        );
+        final start = CanvasMath.normalizedToCanvas(
+          normalizedPoints[safeStart],
+          size,
+        );
+        final snappedStart = _nearestPointOnPath(
+          path: selectedPath,
+          target: start,
+        );
+        if (snappedStart != null) {
+          _drawCircleChainOnPath(
+            canvas: canvas,
+            path: selectedPath,
+            radius: movingCircleRadius,
+            startOffset: snappedStart.offset,
+          );
+          canvas.drawCircle(
+            snappedStart.position,
+            movingCircleRadius + 3,
+            streamEndpointPaint,
+          );
+        }
       }
     }
 
@@ -354,6 +508,8 @@ class PointsCanvasPainter extends CustomPainter {
   bool shouldRepaint(covariant PointsCanvasPainter oldDelegate) {
     return oldDelegate.normalizedPoints != normalizedPoints ||
         oldDelegate.activePointIndex != activePointIndex ||
-        oldDelegate.fitTailCount != fitTailCount;
+        oldDelegate.fitTailCount != fitTailCount ||
+        oldDelegate.movingCircleRadius != movingCircleRadius ||
+        oldDelegate.movingStartIndex != movingStartIndex;
   }
 }

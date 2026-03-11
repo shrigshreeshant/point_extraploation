@@ -5,6 +5,9 @@ class CanvasState {
     required this.normalizedPoints,
     required this.fitTailCount,
     required this.projectedTailPoints,
+    required this.movingCircleRadius,
+    required this.movingStartIndex,
+    required this.movingEndIndex,
     this.farthestProjectedIndex,
     this.fittedLineStart,
     this.fittedLineEnd,
@@ -14,6 +17,9 @@ class CanvasState {
   final List<Offset> normalizedPoints;
   final int fitTailCount;
   final List<Offset> projectedTailPoints;
+  final double movingCircleRadius;
+  final int movingStartIndex;
+  final int movingEndIndex;
   final int? farthestProjectedIndex;
   final Offset? fittedLineStart;
   final Offset? fittedLineEnd;
@@ -30,6 +36,9 @@ class CanvasState {
       ],
       fitTailCount: 3,
       projectedTailPoints: [],
+      movingCircleRadius: 14,
+      movingStartIndex: 0,
+      movingEndIndex: 1,
     );
   }
 
@@ -37,6 +46,9 @@ class CanvasState {
     List<Offset>? normalizedPoints,
     int? fitTailCount,
     List<Offset>? projectedTailPoints,
+    double? movingCircleRadius,
+    int? movingStartIndex,
+    int? movingEndIndex,
     int? farthestProjectedIndex,
     Offset? fittedLineStart,
     Offset? fittedLineEnd,
@@ -49,6 +61,9 @@ class CanvasState {
       normalizedPoints: normalizedPoints ?? this.normalizedPoints,
       fitTailCount: fitTailCount ?? this.fitTailCount,
       projectedTailPoints: projectedTailPoints ?? this.projectedTailPoints,
+      movingCircleRadius: movingCircleRadius ?? this.movingCircleRadius,
+      movingStartIndex: movingStartIndex ?? this.movingStartIndex,
+      movingEndIndex: movingEndIndex ?? this.movingEndIndex,
       farthestProjectedIndex: clearFarthestProjected
           ? null
           : farthestProjectedIndex ?? this.farthestProjectedIndex,

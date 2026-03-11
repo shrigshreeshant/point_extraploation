@@ -19,12 +19,58 @@ class CanvasCubit extends Cubit<CanvasState> {
       return;
     }
     final updated = [...state.normalizedPoints]..removeLast();
-    emit(state.copyWith(normalizedPoints: updated));
+    final maxIndex = updated.length - 1;
+    final nextStart = state.movingStartIndex.clamp(0, maxIndex);
+    var nextEnd = state.movingEndIndex.clamp(0, maxIndex);
+    if (nextEnd == nextStart) {
+      nextEnd = nextStart == 0 ? 1 : nextStart - 1;
+    }
+    emit(
+      state.copyWith(
+        normalizedPoints: updated,
+        movingStartIndex: nextStart,
+        movingEndIndex: nextEnd,
+      ),
+    );
   }
 
   void setFitTailCount(int value) {
     final sanitized = value < 2 ? 2 : value;
     emit(state.copyWith(fitTailCount: sanitized));
+  }
+
+  void setMovingCircleRadius(double value) {
+    emit(state.copyWith(movingCircleRadius: value.clamp(4, 48)));
+  }
+
+  void selectMovingEndPoint({
+    required Offset localPosition,
+    required Size canvasSize,
+  }) {
+    final selectedIndex = CanvasMath.findPointIndexAtPosition(
+      normalizedPoints: state.normalizedPoints,
+      localPosition: localPosition,
+      canvasSize: canvasSize,
+    );
+    if (selectedIndex == null || selectedIndex == state.movingStartIndex) {
+      return;
+    }
+    emit(state.copyWith(movingEndIndex: selectedIndex));
+  }
+
+  void selectMovingStartPoint({
+    required Offset localPosition,
+    required Size canvasSize,
+  }) {
+    final selectedIndex = CanvasMath.findPointIndexAtPosition(
+      normalizedPoints: state.normalizedPoints,
+      localPosition: localPosition,
+      canvasSize: canvasSize,
+    );
+    if (selectedIndex == null || selectedIndex == state.movingEndIndex) {
+      return;
+    }
+    emit(state.copyWith(movingStartIndex: selectedIndex));
   }
 
   void startDrag({required Offset localPosition, required Size canvasSize}) {

@@ -70,7 +70,7 @@ class _CanvasPageState extends State<CanvasPage> {
             children: [
               const SizedBox(height: 8),
               const Text(
-                'Drag points inside the canvas. Added points are normalized.',
+                'Drag points. Long-press any point to set circle start. Circles are drawn sequentially on the curve.',
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -117,6 +117,35 @@ class _CanvasPageState extends State<CanvasPage> {
                     },
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              BlocBuilder<CanvasCubit, CanvasState>(
+                builder: (context, state) {
+                  return Row(
+                    children: [
+                      SizedBox(
+                        width: 130,
+                        child: Text(
+                          'Circle radius: ${state.movingCircleRadius.toStringAsFixed(0)}',
+                        ),
+                      ),
+                      Expanded(
+                        child: Slider(
+                          min: 4,
+                          max: 48,
+                          divisions: 44,
+                          value: state.movingCircleRadius,
+                          label: state.movingCircleRadius.toStringAsFixed(0),
+                          onChanged: (value) {
+                            context.read<CanvasCubit>().setMovingCircleRadius(
+                              value,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 12),
               Expanded(

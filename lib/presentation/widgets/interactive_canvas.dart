@@ -12,10 +12,7 @@ class InteractiveCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final canvasSize = Size(
-          constraints.maxWidth,
-          constraints.maxHeight,
-        );
+        final canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
 
         return BlocBuilder<CanvasCubit, CanvasState>(
           builder: (context, state) {
@@ -24,18 +21,24 @@ class InteractiveCanvas extends StatelessWidget {
               onTapDown: (_) {
                 FocusManager.instance.primaryFocus?.unfocus();
               },
+              onLongPressStart: (details) {
+                context.read<CanvasCubit>().selectMovingStartPoint(
+                  localPosition: details.localPosition,
+                  canvasSize: canvasSize,
+                );
+              },
               onPanStart: (details) {
                 FocusManager.instance.primaryFocus?.unfocus();
                 context.read<CanvasCubit>().startDrag(
-                      localPosition: details.localPosition,
-                      canvasSize: canvasSize,
-                    );
+                  localPosition: details.localPosition,
+                  canvasSize: canvasSize,
+                );
               },
               onPanUpdate: (details) {
                 context.read<CanvasCubit>().updateDrag(
-                      localPosition: details.localPosition,
-                      canvasSize: canvasSize,
-                    );
+                  localPosition: details.localPosition,
+                  canvasSize: canvasSize,
+                );
               },
               onPanEnd: (_) {
                 context.read<CanvasCubit>().endDrag();
@@ -48,6 +51,8 @@ class InteractiveCanvas extends StatelessWidget {
                   normalizedPoints: state.normalizedPoints,
                   activePointIndex: state.activePointIndex,
                   fitTailCount: state.fitTailCount,
+                  movingCircleRadius: state.movingCircleRadius,
+                  movingStartIndex: state.movingStartIndex,
                 ),
                 child: const SizedBox.expand(),
               ),

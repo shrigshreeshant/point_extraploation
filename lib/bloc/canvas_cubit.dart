@@ -45,11 +45,7 @@ class CanvasCubit extends Cubit<CanvasState> {
   }
 
   void togglePlotAnimation() {
-    emit(
-      state.copyWith(
-        isPlotAnimationPlaying: !state.isPlotAnimationPlaying,
-      ),
-    );
+    emit(state.copyWith(isPlotAnimationPlaying: !state.isPlotAnimationPlaying));
   }
 
   void selectMovingEndPoint({

@@ -108,7 +108,7 @@ This section describes the implementation rationale and trade-offs.
 - Snapping guarantees circle centers are constructed from the same path metric space.
 
 ### 6) Non-overlap strategy
-- Spacing is based on diameter with a small gap (`2 * radius + 2`).
+- Spacing is based on diameter (`2 * radius`).
 - This avoids ambiguous overlap artifacts and keeps sequence readability.
 
 ### 7) Final fallback circle strategy

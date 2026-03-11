@@ -276,7 +276,7 @@ class PointsCanvasPainter extends CustomPainter {
     if (length < 1e-6) {
       return;
     }
-    final spacing = math.max(2.0, radius * 2 + 2);
+    final spacing = radius * 2;
 
     final fillPaint = Paint()
       ..color = const Color(0x5581D4FA)
